@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar e Gerenciar Excel</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    .button-container {
+      margin: 10px 0;
+    }
+    .action-buttons button {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Importar e Gerenciar Excel</h1>
+  <div class="button-container">
+    <input type="file" id="upload" accept=".xlsx, .xls" />
+    <button onclick="saveData()">Salvar</button>
+    <button onclick="clearData()">Excluir Tudo</button>
+  </div>
+  <table id="data-table">
+    <thead>
+      <tr id="table-header"></tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+
+  <script>
+    const uploadInput = document.getElementById('upload');
+    const tableHeader = document.getElementById('table-header');
+    const tableBody = document.getElementById('table-body');
+    const localStorageKey = 'excelData';
+
+    // Função para carregar dados do localStorage
+    function loadData() {
+      const savedData = localStorage.getItem(localStorageKey);
+      if (savedData) {
+        renderTable(JSON.parse(savedData));
+      }
+    }
+
+    // Função para renderizar a tabela
+    function renderTable(data) {
+      tableHeader.innerHTML = '';
+      tableBody.innerHTML = '';
+
+      if (data.length > 0) {
+        // Cabeçalho da tabela
+        Object.keys(data[0]).forEach((key) => {
+          const th = document.createElement('th');
+          th.textContent = key;
+          tableHeader.appendChild(th);
+        });
+        const thActions = document.createElement('th');
+        thActions.textContent = 'Ações';
+        tableHeader.appendChild(thActions);
+
+        // Corpo da tabela
+        data.forEach((row, rowIndex) => {
+          const tr = document.createElement('tr');
+          Object.values(row).forEach((value) => {
+            const td = document.createElement('td');
+            td.contentEditable = true; // Permitir edição direta
+            td.textContent = value;
+            tr.appendChild(td);
+          });
+
+          // Adicionar coluna de ações
+          const tdActions = document.createElement('td');
+          tdActions.classList.add('action-buttons');
+
+          // Botão de excluir linha
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = 'Excluir';
+          deleteBtn.onclick = () => deleteRow(rowIndex);
+
+          // Botão de editar linha (somente salva alterações locais)
+          const editBtn = document.createElement('button');
+          editBtn.textContent = 'Salvar Alterações';
+          editBtn.onclick = () => saveRow(rowIndex, tr);
+
+          tdActions.appendChild(editBtn);
+          tdActions.appendChild(deleteBtn);
+          tr.appendChild(tdActions);
+
+          tableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // Função para processar o arquivo Excel
+    uploadInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          renderTable(jsonData);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
+    // Função para salvar os dados no localStorage
+    function saveData() {
+      const rows = [];
+      tableBody.querySelectorAll('tr').forEach((tr) => {
+        const cells = tr.querySelectorAll('td');
+        const row = {};
+        tableHeader.querySelectorAll('th').forEach((th, index) => {
+          if (index < cells.length) {
+            row[th.textContent] = cells[index]?.textContent || '';
+          }
+        });
+        rows.push(row);
+      });
+      localStorage.setItem(localStorageKey, JSON.stringify(rows));
+      alert('Dados salvos com sucesso!');
+    }
+
+    // Função para excluir uma linha específica
+    function deleteRow(rowIndex) {
+      const data = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+      data.splice(rowIndex, 1);
+      localStorage.setItem(localStorageKey, JSON.stringify(data));
+      loadData();
+    }
+
+    // Função para salvar alterações de uma linha específica
+    function saveRow(rowIndex, tr) {
+      const data = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+      const updatedRow = {};
+      const cells = tr.querySelectorAll('td');
+      tableHeader.querySelectorAll('th').forEach((th, index) => {
+        if (index < cells.length) {
+          updatedRow[th.textContent] = cells[index]?.textContent || '';
+        }
+      });
+      data[rowIndex] = updatedRow;
+      localStorage.setItem(localStorageKey, JSON.stringify(data));
+      alert('Linha atualizada com sucesso!');
+    }
+
+    // Função para limpar todos os dados
+    function clearData() {
+      localStorage.removeItem(localStorageKey);
+      tableHeader.innerHTML = '';
+      tableBody.innerHTML = '';
+      alert('Todos os dados foram excluídos!');
+    }
+
+    // Carregar dados ao iniciar
+    loadData();
+  </script>
+</body>
+</html>
