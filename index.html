@@ -1,0 +1,261 @@
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">NC Transportes | Gestão de Entregas</title>
+    <link rel="icon" type="image/png" href="relatorio-de-producao.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>
+</head>
+<body class="font-sans bg-gray-100">
+
+    <header class="bg-gray-900 text-white flex justify-between items-center p-4">
+        <div class="flex items-center">
+            <img src="https://i.ibb.co/JqSNybq/375d8cbcc1f6eada4a388d2006a72ce5bb0f2ce8.png" alt="Logo da transportadora" class="h-12 w-auto mr-4">
+            <h1 id="headerTitle" class="text-lg">NC Transportes | Gestão de Entregas</h1>
+        </div>
+        <div class="flex items-center text-sm">
+            <span class="mr-4">Versão: 2.0.0</span>
+        </div>
+    </header>
+
+    <div id="dateTime" class="text-center text-white text-xs mt-2"></div>
+
+    <div class="sub-header bg-white text-black p-2 text-xs flex justify-between">
+        <div class="column flex-1 p-2">
+            <p>000 - PROCESSO DE TRANSPORTE JÁ INICIADO</p>
+            <p>001 - ENTREGA REALIZADA NORMALMENTE</p>
+            <p>003 - RECUSA POR FALTA DE PEDIDO DE COMPRA</p>
+            <p>004 - RECUSA POR PEDIDO DE COMPRA CANCELADO</p>
+            <p>006 - ENDEREÇO DO CLIENTE DESTINO NÃO LOCALIZADO</p>
+            <p>008 - PREÇO MERCADORIA EM DESACORDO COM O PEDIDO DE COMPRA</p>
+            <p>009 - MERCADORIA EM DESACORDO COM O PEDIDO DE COMPRA</p>
+            <p>014 - MERCADORIA SINISTRADA</p>
+        </div>
+        <div class="column flex-1 p-2">
+            <p>016 - PEDIDO DE COMPRA EM DUPLICIDADE</p>
+            <p>018 - MERCADORIAS TROCADAS</p>
+            <p>019 - REENTREGA SOLICITADA PELO CLIENTE</p>
+            <p>020 - ENTREGA PREJUDICADA POR FALTA DE TEMPO HABIL</p>
+            <p>021 - ESTABELECIMENTO FECHADO</p>
+            <p>022 - REENTREGA SEM COBRANÇA DO CLIENTE</p>
+            <p>028 - MERCADORIA RETIDA ATÉ SEGUNDA ORDEM</p>
+            <p>029 - CLIENTE RETIRA MERCADORIA NA TRANSPORTADORA</p>
+        </div>
+        <div class="column flex-1 p-2">
+            <p>043 - FERIADO MUNICIPAL/NACIONAL</p>
+            <p>044 - EXCESSO DE VEICULOS</p>
+            <p>045 - CLIENTE DESTINO ENCERROU AS ATIVIDADES</p>
+            <p>051 - MERCADORIA VENCIDA</p>
+            <p>077 - CLIENTE DESTINO MUDOU DE ENDEREÇO</p>
+            <p>091 - ENTREGA PROGRAMADA</p>
+        </div>
+    </div>
+
+    <div class="bg-white p-4 mt-4">
+        <p class="text-sm font-medium text-gray-700">Data de Ocorrência: Preenchida automaticamente, mas pode ser editada se necessário.</p>
+    </div>
+
+    <hr class="my-4">
+
+    <table class="w-full border-collapse mt-4">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="border p-2">Nota Fiscal</th>
+                <th class="border p-2">Data de Ocorrência</th>
+                <th class="border p-2">Observação</th>
+                <th class="border p-2">Status</th>
+                <th class="border p-2">Upload Imagem</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td contenteditable="true" class="border p-2" onkeydown="moveToNextField(event, this)" onblur="formatNotaFiscal(this)" oninput="validateNumber(this)"></td>
+                <td contenteditable="true" class="border p-2"></td>
+                <td contenteditable="true" class="border p-2"></td>
+                <td class="border p-2">
+                    <select class="w-full p-2 border border-gray-300 rounded">
+                        <option value=""></option>
+                        <option value="000">000</option>
+                        <option value="001">001</option>
+                        <option value="003">003</option>
+                        <option value="004">004</option>
+                        <option value="006">006</option>
+                        <option value="008">008</option>
+                        <option value="009">009</option>
+                        <option value="014">014</option>
+                        <option value="016">016</option>
+                        <option value="019">019</option>
+                        <option value="020">020</option>
+                        <option value="021">021</option>
+                        <option value="022">022</option>
+                        <option value="028">028</option>
+                        <option value="029">029</option>
+                        <option value="043">043</option>
+                        <option value="044">044</option>
+                        <option value="045">045</option>
+                        <option value="051">051</option>
+                        <option value="077">077</option>
+                        <option value="091">091</option>
+                    </select>
+                </td>
+                <td class="border p-2"><input type="file" accept="image/*" class="w-full p-2 border border-gray-300 rounded" onchange="uploadImage(event, this)"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <footer class="bg-gray-900 text-white flex justify-between items-center p-4" id="footer">
+        <button class="clear-button bg-transparent text-green-500 font-bold px-4 py-2" onclick="clearTable()">LIMPAR</button>
+        <button class="config-button bg-transparent text-green-500 font-bold px-4 py-2" onclick="generateTXT()">GERAR TXT</button>
+    </footer>
+
+    <script>
+        const API_KEY = '01befc6b1e165f4724c744063da1df6d';
+
+        function uploadImage(event, inputElement) {
+            const file = event.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const imageUrl = data.data.url;
+
+                        // Encontra a célula de "Observação" correspondente
+                        const row = inputElement.closest('tr');
+                        const observationCell = row.querySelector('td:nth-child(3)');
+                        
+                        // Preenche a célula com o link da imagem
+                        observationCell.innerHTML = `<a href="${imageUrl}" target="_blank">${imageUrl}</a>`;
+                    } else {
+                        alert('Erro ao fazer upload da imagem.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                });
+            }
+        }
+
+        function moveToNextField(event, currentCell) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const nextCell = currentCell.nextElementSibling;
+
+                if (nextCell) {
+                    nextCell.focus();
+                }
+            }
+        }
+
+        function clearTable() {
+            const rows = document.querySelectorAll("table tbody tr");
+            rows.forEach(row => {
+                row.cells[0].innerText = '';
+                row.cells[1].innerText = '';
+                row.cells[2].innerText = '';
+                row.cells[3].querySelector('select').selectedIndex = 0;
+            });
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const formattedDateTime = now.toLocaleString('pt-BR', options);
+            document.getElementById('dateTime').innerText = formattedDateTime;
+        }
+
+        window.onload = function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        };
+
+        function formatNotaFiscal(input) {
+            let value = input.innerText.trim();
+            if (value && !isNaN(value)) {
+                value = value.padStart(9, '0');
+                input.innerText = value;
+
+                // Preenche a célula de data de ocorrência com a data atual
+                const now = new Date();
+                const dia = String(now.getDate()).padStart(2, '0');
+                const mes = String(now.getMonth() + 1).padStart(2, '0');
+                const ano = String(now.getFullYear());
+                const dataOcorrencia = `${dia}${mes}${ano}`;
+
+                const row = input.closest('tr');
+                const dataOcorrenciaCell = row.cells[1];
+                dataOcorrenciaCell.innerText = dataOcorrencia;
+            }
+        }
+
+        function validateNumber(input) {
+            const value = input.innerText;
+            if (!/^\d*$/.test(value)) {
+                input.innerText = '';
+            }
+        }
+
+        <script>
+        function generateTXT() {
+            const transportadoraNome = "NC Transportes";
+            const transportadoraCNPJ = "30524406000134";
+            const embarcadorNome = "Turatti & Turatti LTDA";
+            const embarcadorCNPJ = "09639440000672";
+
+            const now = new Date();
+            const dia = String(now.getDate()).padStart(2, '0');
+            const mes = String(now.getMonth() + 1).padStart(2, '0');
+            const ano = String(now.getFullYear()).slice(-2);
+            const hora = String(now.getHours()).padStart(2, '0');
+            const minuto = String(now.getMinutes()).padStart(2, '0');
+
+            const ocorrenciaCodigo = `OCO50${dia}${mes}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+            const ocorrenciaCodigo2 = `OCORR50${dia}${mes}${Math.floor(Math.random() * 200).toString().padStart(3, '0')}`;
+
+            let txtContent = `000${transportadoraNome.padStart(4, ' ')}`;
+            txtContent += `${embarcadorNome.padStart(40, ' ')}`;
+            txtContent += `${dia.padStart(15, ' ')}${mes}${ano}${hora}${minuto}`;
+            txtContent += `${ocorrenciaCodigo}\n`;
+            txtContent += `540${ocorrenciaCodigo2}\n`;
+            txtContent += `541${transportadoraCNPJ.padStart(14, ' ')}${transportadoraNome.padStart(15, ' ')}\n`;
+
+            const rows = document.querySelectorAll("table tbody tr");
+            for (let i = 0; i < rows.length; i++) {
+                const notaFiscal = rows[i].cells[0].innerText.trim();
+                const dataOcorrencia = rows[i].cells[1].innerText.trim();
+                const observacao = rows[i].cells[2].innerText.trim();
+                const status = rows[i].cells[3].querySelector('select').value;
+
+                if (notaFiscal || dataOcorrencia || observacao) {
+                    txtContent += `542${embarcadorCNPJ.padStart(4, ' ')}1${notaFiscal.padStart(11, ' ')}${status.padStart(3, ' ')}${dataOcorrencia.padStart(4, ' ')}${hora}${minuto}\n`;
+                    txtContent += `543${observacao.padStart(4, ' ')}\n`;
+                }
+            }
+
+            const fileName = `${ocorrenciaCodigo}.txt`;
+
+            fetch('/save-txt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ fileName, content: txtContent })
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
